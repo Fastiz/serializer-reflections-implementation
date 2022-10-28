@@ -1,11 +1,7 @@
+package tokenizer
+
 import kotlin.reflect.KClass
 import kotlin.reflect.full.declaredMemberProperties
-
-sealed interface Token
-class PrimitiveToken<T>(val value: T) : Token
-class NestedToken(val members: List<Pair<String, Token>>) : Token
-class ListToken(val elements: List<Token>) : Token
-object NullToken : Token
 
 class Tokenizer(private val primitiveClasses: List<KClass<*>>) {
     fun <T : Any> tokenize(obj: T?): Token {

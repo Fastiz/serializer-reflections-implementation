@@ -1,4 +1,10 @@
-class JSONSerializer(private val tokenizer: Tokenizer) {
+class JSONSerializer {
+    private val tokenizer: Tokenizer = Tokenizer.buildTokenizer {
+        addPrimitiveClass<Int>()
+        addPrimitiveClass<String>()
+        addPrimitiveClass<Boolean>()
+    }
+
     fun <T> serialize(obj: T): String {
         val token = tokenizer.tokenize(obj)
 
@@ -6,11 +12,17 @@ class JSONSerializer(private val tokenizer: Tokenizer) {
     }
 
     private fun mapTokenToJSON(token: Token): String {
-        return when(token){
+        return when (token) {
             is NullToken -> mapNullTokenToJSON()
             is PrimitiveToken<*> -> mapPrimitiveTokenToJSON(token)
             is NestedToken -> mapNestedTokenToJSON(token)
+            is ListToken -> mapListTokenToJSON(token)
         }
+    }
+
+    private fun mapListTokenToJSON(token: ListToken): String {
+        val elements = token.elements.joinToString(",") { mapTokenToJSON(it) }
+        return "[$elements]"
     }
 
     private fun mapNullTokenToJSON(): String {
@@ -18,7 +30,19 @@ class JSONSerializer(private val tokenizer: Tokenizer) {
     }
 
     private fun mapPrimitiveTokenToJSON(token: PrimitiveToken<*>): String {
-        return token.value.toString()
+        if (token.value is String) {
+            return "\"${token.value}\""
+        }
+
+        if (token.value is Boolean) {
+            return if (token.value) "true" else "false"
+        }
+
+        if (token.value is Int) {
+            return "${token.value}"
+        }
+
+        throw IllegalStateException("mapPrimitiveTokenToJSON - unexpected primitive type")
     }
 
     private fun mapNestedTokenToJSON(token: NestedToken): String {

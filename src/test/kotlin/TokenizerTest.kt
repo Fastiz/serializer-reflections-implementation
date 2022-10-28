@@ -1,4 +1,5 @@
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
@@ -6,7 +7,7 @@ import kotlin.test.assertTrue
 class TokenizerTest {
     @Test
     fun `when the object is null return a null token`() {
-        val tokenizer = Tokenizer()
+        val tokenizer = Tokenizer.buildTokenizer {}
         val obj = null
 
         val token = tokenizer.tokenize(obj)
@@ -16,7 +17,9 @@ class TokenizerTest {
 
     @Test
     fun `when the object is a primitive return a primitive token`() {
-        val tokenizer = Tokenizer()
+        val tokenizer = Tokenizer.buildTokenizer {
+            addPrimitiveClass<Int>()
+        }
         val obj = 1
 
         val token = tokenizer.tokenize(obj)
@@ -28,10 +31,34 @@ class TokenizerTest {
     }
 
     @Test
+    fun `when the object is a list return a list token`() {
+        val tokenizer = Tokenizer.buildTokenizer {
+            addPrimitiveClass<Int>()
+        }
+        val obj = listOf(1, 2, 3, 4)
+
+        val token = tokenizer.tokenize(obj)
+
+        assertTrue { token is ListToken }
+        if (token !is ListToken) return
+
+        for (i in 0 until token.elements.size) {
+            val elem = token.elements[i]
+            assertTrue { elem is PrimitiveToken<*> }
+            if (elem !is PrimitiveToken<*>) return
+
+            assertEquals(obj[i], elem.value)
+        }
+    }
+
+    @Test
     fun `when the object is a non primitive class then return a nested token`() {
         data class A(val a: String, val b: Int)
 
-        val tokenizer = Tokenizer()
+        val tokenizer = Tokenizer.buildTokenizer {
+            addPrimitiveClass<Int>()
+            addPrimitiveClass<String>()
+        }
         val obj = A("hola", 2)
 
         val token = tokenizer.tokenize(obj)

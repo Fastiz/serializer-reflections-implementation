@@ -1,3 +1,5 @@
+import kotlin.reflect.KClass
+import kotlin.reflect.full.declaredMemberProperties
 sealed interface Token
 class PrimitiveToken<T>(val value: T) : Token
 class NestedToken(val members: List<Pair<String, Token>>) : Token
@@ -12,23 +14,21 @@ class Tokenizer {
         Long::class,
     )
 
-    fun <T> tokenize(obj: T): Token {
+    fun <T : Any> tokenize(obj: T?): Token {
         if (obj == null) {
             return NullToken
         }
 
-        val clazz = obj!!::class
+        val clazz = obj::class
         if (primitiveClasses.contains(clazz)) {
             return PrimitiveToken(obj)
         }
 
-        val members = clazz.members
-            .filter { it.parameters.size == 1 }
-            // FIXME: find a better way
-            .filter { it.parameters[0].name == null }
+        val members = (clazz as KClass<Any>).declaredMemberProperties
             .map {
                 val name = it.name
-                val token = tokenize(it.call(obj))
+                val value = it.get(obj)
+                val token = tokenize(value)
                 Pair(name, token)
             }
 

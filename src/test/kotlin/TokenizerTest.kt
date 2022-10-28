@@ -39,6 +39,8 @@ class TokenizerTest {
         assertTrue { token is NestedToken }
         if (token !is NestedToken) return
 
+        assertEquals(2, token.members.size)
+
         val aToken = token.members.find { it.first == "a" }
         assertNotNull(aToken)
         assertTrue { aToken.second is PrimitiveToken<*> }
